@@ -101,11 +101,15 @@ class Admin extends BaseController
             'title_header' => 'Dashboard',
             'title_info' => 'Halaman utama untuk admin Puskesmas - mengecek pasien yang melakukan pendaftaran'
         ];
-        $data['registrations'] = $model->join('pasien', 'pasien.id=daftar.id_pasien')->join('dokter', 'dokter.id=daftar.id_dokter')->where('approved', 0)->where('tanggal_daftar !=', date('Y-m-d'))->orderBy('tanggal_daftar', 'DESC')->findAll();
+        $data['registrations'] = $model->getCombinedData(0);
+        // dd($data);
+        // $data['registrations'] = $model->join('pasien', 'pasien.id=daftar.id_pasien')->join('dokter', 'dokter.id=daftar.id_dokter', 'left')->join('poli','poli.id=daftar.id_poli')->where('approved', 0)->where('tanggal_daftar !=', date('Y-m-d'))->orderBy('tanggal_daftar', 'DESC')->findAll();
 
-        $data['registrations_now'] = $model->join('pasien', 'pasien.id=daftar.id_pasien')->join('dokter', 'dokter.id=daftar.id_dokter')->where('approved', 0)->where('tanggal_daftar', date('Y-m-d'))->orderBy('tanggal_daftar', 'DESC')->findAll();
+        $data['registrations_now'] = $model->getCombinedData(0, date('Y-m-d'));
+        // $data['registrations_now'] = $model->join('pasien', 'pasien.id=daftar.id_pasien')->join('dokter', 'dokter.id=daftar.id_dokter')->where('approved', 0)->where('tanggal_daftar', date('Y-m-d'))->orderBy('tanggal_daftar', 'DESC')->findAll();
 
-        $data['registrations_appr'] = $model->join('pasien', 'pasien.id=daftar.id_pasien')->join('dokter', 'dokter.id=daftar.id_dokter')->where('approved', 1)->findAll();
+        $data['registrations_appr'] = $model->getCombinedData(1);
+        // $data['registrations_appr'] = $model->join('pasien', 'pasien.id=daftar.id_pasien')->join('dokter', 'dokter.id=daftar.id_dokter')->where('approved', 1)->findAll();
 
         // Statistik pendaftaran hari ini
         $today = date('Y-m-d');
@@ -116,7 +120,9 @@ class Admin extends BaseController
         $data['registrations_month'] = $model->where('tanggal_daftar >=', $startOfMonth)->countAllResults();
         
         // Notifikasi pendaftaran yang perlu approval
-        $data['pending_count'] = $model->where('approved', 0)->countAllResults();
+        $data['pending_count'] = $model->where('approved', 0)->where('tanggal_daftar !=', date('Y-m-d'))->countAllResults();
+
+        $data['dokter'] = $this->dokterModel->join('poli', 'poli.id=dokter.id_poli')->findAll();
 
         echo view('admin/dashboard', $data);
     }
@@ -138,8 +144,8 @@ class Admin extends BaseController
             'title_info' => 'Halaman pendaftaran pasien rawat jalan (ambil antrian) -- Admin',
         ];
 
-        $data['doctors'] = $doctorModel->findAll();
-        $data['patients'] = $pasienModel->findAll();
+        $data['doctors'] = $doctorModel->select('dokter.*, poli.id as poli_id, poli.nama_poli')->join('poli', 'poli.id=dokter.id_poli')->orderBy('nama_poli', 'ASC')->findAll();
+        $data['patients'] = $pasienModel->getCombinedDataPasien();
         $data['antrian'] = $daftarModel->getNextQueueNumber();
         $data['poli'] = $poliModel->findAll();
         echo view('admin/create_daftar', $data);
@@ -147,12 +153,16 @@ class Admin extends BaseController
 
     public function store_outpatient()
     {
+        $id = explode('-',$this->request->getPost('doctor_id'));
+        $idDokter = $id[0];
+        $idPoli = $id[1];
+
         helper(['form']);
         if(!session()->get('logged_in')){
             return redirect()->to('/admin/login');
         }
         $rules = [
-            'patient_id' => 'required|integer',
+            'patient_id' => 'required',
             'registration_date' => 'required|valid_date[Y-m-d]',
             'visit_reason' => 'required|min_length[5]'
         ];
@@ -161,19 +171,25 @@ class Admin extends BaseController
             $model = new DaftarModel();
             $data = [
                 'id_pasien' => $this->request->getVar('patient_id'),
-                'id_dokter' => $this->request->getVar('doctor_id'),
-                'id_poli' => $this->request->getVar('poli'),
+                'id_dokter' => $idDokter,
+                'id_poli' => $idPoli,
                 'tanggal_daftar' => $this->request->getVar('registration_date'),
                 'alasan' => $this->request->getVar('visit_reason'),
                 'no_antrian' => $this->request->getVar('antrian'),
             ];
+            
             $model->save($data);
             return redirect()->to('/admin/dashboard');
         } else {
             $doctorModel = new DokterModel();
-            $data['doctors'] = $doctorModel->findAll();
+            $daftarModel = new DaftarModel();
+            $pasienModel = new PasienModel();
+            $data['doctors'] = $doctorModel->select('dokter.*, poli.id as poli_id, poli.nama_poli')->join('poli', 'poli.id=dokter.id_poli')->orderBy('nama_poli', 'ASC')->findAll();
+            $data['patients'] = $pasienModel->getCombinedDataPasien();
+            // $data['doctors'] = $doctorModel->findAll();
+            $data['antrian'] = $daftarModel->getNextQueueNumber();
             $data['validation'] = $this->validator;
-            echo view('admin/create_outpatient', $data);
+            echo view('admin/create_daftar', $data);
         }
     }
 

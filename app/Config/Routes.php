@@ -68,6 +68,9 @@ $routes->group('admin', function($routes) {
     $routes->post('pasien/update/(:num)', 'Admin::update_pasien/$1');
     $routes->post('pasien/delete/(:num)', 'Admin::delete_pasien/$1');
 });
+$routes->post('/admin/pilihdokter', 'Daftar::store_pilihdokter');
+$routes->post('/admin/hapus/daftar/(:num)', 'Daftar::hapus/$1');
+
 // admin /dokter
 $routes->group('admin/dokter', function($routes) {
     $routes->get('/', 'Dokter::index');

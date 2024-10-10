@@ -14,7 +14,7 @@
             <div class="p-3">
                 <p class="fs-1 fw-bold" style="font-size: 72px;"><?= $antrian ?></p>
                 <div class="lh-1">
-                    <h5><?= session()->get('nama_pasien') ?></h5>
+                    <h5 id="setPasien"><?= session()->get('nama_pasien') ?></h5>
                     <p id="setPoli">Poli</p>
                     <small class="form-text text-light"><?= date('Y-m-d') ?></small>
                 </div>
@@ -67,7 +67,11 @@
         $('#poli').on('change', function(){
             let idPoli = $(this).val()
             let namaPoli = $('#poli option:selected').text()
-            $('#setPoli').html(namaPoli)
+            if($(this).val() == ""){
+                $('#setPoli').html('Pilih Poli')
+            }else{
+                $('#setPoli').html(namaPoli)
+            }
             $.ajax({
                 url: "<?= base_url('dokter/get_data_dokter') ?>",
                 method: "POST",
@@ -77,6 +81,15 @@
                     console.log(d)
                 }
             })
+        })
+        $('#nama_pasien').on('change', function(){
+            let namaPasien = $('#nama_pasien option:selected').text()
+            if($(this).val() == ""){
+                $('#setPasien').html('Pilih Pasien')
+            }else{
+                let namaP = namaPasien.split('-')
+                $('#setPasien').html(namaP[0])
+            }
         })
     })
 </script>

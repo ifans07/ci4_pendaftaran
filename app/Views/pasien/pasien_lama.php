@@ -60,17 +60,6 @@
         let nokk = $('#nokk').val()
         let nikUtama = $('#nikutama').val()
 
-        let html = `
-            <tr>
-                <th class="p-2">No</th>
-                <th class="p-2">Tanggal Daftar</th>
-                <th class="p-2">No Antrian</th>
-                <th class="p-2">Dokter</th>
-                <th class="p-2">Poli</th>
-                <th class="p-2">Alasan</th>
-                <th class="p-2">Status</th>
-            </tr>
-        `
         $('#getdata').on('click', (e)=>{
             let nik = $('#niko').val()
             $.ajax({
@@ -109,6 +98,7 @@
                             <a href="/pasien/pasien_daftar/${idpasien}" class="btn btn-dark" style="background-color: #2c3e50"><i class="fa-solid fa-stethoscope"></i> Ambil Antrian</a>
                         `
                     )
+                    $('#taruhdaftar').empty()
                     getDataDaftar(idpasien)
                 },
                 error: function(xhr, status, error){
@@ -120,6 +110,8 @@
                             </div>
                         `)
                     }else{
+                        $('#btnDaftar').html('')
+                        $('#taruhdaftar').empty()
                         $('#notif').html(`
                             <div class="alert alert-danger">
                                 NIK: ${nik} tidak terdaftar di keluarga dengan No KK: ${nokk}.
@@ -136,9 +128,22 @@
                     type: 'POST',
                     data: {id: idpasien},
                     dataType: 'JSON',
+                    cache: false,
                     success: function(e){
-                        for(let i=0; i < e.data.length; i++){
-                            
+                        
+                        let html = `
+                                    <tr>
+                                        <th class="p-2">No</th>
+                                        <th class="p-2">Tanggal Daftar</th>
+                                        <th class="p-2">No Antrian</th>
+                                        <th class="p-2">Dokter</th>
+                                        <th class="p-2">Poli</th>
+                                        <th class="p-2">Alasan</th>
+                                        <th class="p-2">Status</th>
+                                    </tr>
+                                `
+
+                        for(let i=0; i < e.data.length; i++){                            
                             html+=`
                                 <tr>
                                     <td class="p-2">${i+1}</td>
@@ -155,7 +160,7 @@
                                 </tr>
                             `
                         }
-                        console.log(html)
+                        
                         $('#taruhdaftar').html(html)
                     },
                     error: function(xhr, status, error){

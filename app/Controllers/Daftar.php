@@ -51,7 +51,6 @@ class Daftar extends BaseController
                 'alasan' => $this->request->getVar('visit_reason'),
                 'no_antrian' => $this->request->getVar('antrian')
             ];
-            dd($data);
             $model->save($data);
             return redirect()->to('/daftar');
         } else {
@@ -132,17 +131,46 @@ class Daftar extends BaseController
         $daftarModel = new DaftarModel();
         $idpasien = $this->request->getPost('id');
         // if(preg_match('/^P\d+$/', $idpasien)){
+
         if(!is_numeric($idpasien)){
             return $this->response->setJSON([
-                'data' => $daftarModel->join('second_pasien', 'second_pasien.id=daftar.id_pasien')->join('dokter', 'dokter.id=daftar.id_dokter')->join('poli', 'poli.id=daftar.id_poli')->where('id_pasien', $idpasien)->findAll()
+                'data' => $daftarModel->join('second_pasien', 'second_pasien.id=daftar.id_pasien')->join('dokter', 'dokter.id=daftar.id_dokter')->join('poli', 'poli.id=daftar.id_poli')->where('daftar.id_pasien', $idpasien)->findAll()
             ]);
         }else{
             return $this->response->setJSON([
-                'data' => $daftarModel->join('pasien', 'pasien.id=daftar.id_pasien')->join('dokter', 'dokter.id=daftar.id_dokter')->join('poli', 'poli.id=daftar.id_poli')->where('id_pasien', $idpasien)->findAll()
+                'data' => $daftarModel->join('pasien', 'pasien.id=daftar.id_pasien')->join('dokter', 'dokter.id=daftar.id_dokter')->join('poli', 'poli.id=daftar.id_poli')->where('daftar.id_pasien', $idpasien)->findAll()
             ]);
         }
+
         // return $this->response->setJSON([
         //     'data' => $daftarModel->join('pasien', 'pasien.id=daftar.id_pasien')->join('second_pasien', 'second_pasien.id=daftar.id_pasien')->where('daftar.id_pasien', '3')->findAll()
         // ]);
+    }
+
+
+    // update dokter
+    public function store_pilihdokter(){
+        $daftarModel = new DaftarModel();
+        $id = $this->request->getPost('pendaftaran_id');
+
+        $data = [
+            'id_dokter' => $this->request->getPost('dokter_id'),
+            'approved' => '1'
+        ];
+
+        $daftarModel->update($id, $data);
+        session()->setFlashdata('msg', 'berhasil');
+        return redirect()->to('/admin/dashboard');
+
+    }
+
+    public function hapus($id){
+        $daftarModel = new DaftarModel();
+        if ($daftarModel->find($id)) {
+            $daftarModel->delete($id);
+            return redirect()->to('/admin/dashboard')->with('msg', 'Data berhasil dihapus!');
+        } else {
+            return redirect()->to('/admin/dashboard')->with('error', 'Data tidak ditemukan!');
+        }
     }
 }

@@ -55,4 +55,19 @@ class PasienModel extends Model
         $dataCombine = array_merge($pasien, $secondPasien);
         return $dataCombine;
     }
+
+    public function getCombinedDataPasien()
+    {
+
+        $query1 = $this->db->table($this->table)
+                        ->select('id, NIK as nik, NOKK as nokk, nama_pasien, tgl_lahir, jenis_kelamin as jk, alamat, nohp, email, bpjs')
+                        ->getCompiledSelect();
+        
+        $query2 = $this->db->table('second_pasien')
+                        ->select('id, nik as nik, nokk as nokk, nama_pasien, tgl_lahir, jk as jk, alamat, nohp, email, bpjs')
+                        ->getCompiledSelect();
+        
+        $finalQuery = $this->db->query($query1 . ' UNION ' . $query2);
+        return $finalQuery->getResultArray();
+    }
 }
